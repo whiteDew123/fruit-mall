@@ -3,6 +3,7 @@ package com.fruitmall.system.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.fruitmall.common.result.PageResult;
 import com.fruitmall.system.domain.SysUser;
+import com.fruitmall.system.dto.SysUserCreateDTO;
 import com.fruitmall.system.query.SysUserQuery;
 import com.fruitmall.system.vo.SysUserVO;
 
@@ -25,4 +26,11 @@ public interface ISysUserService extends IService<SysUser> {
      * 分页查询用户列表，手机号脱敏
      */
     PageResult<SysUserVO> pageUsers(SysUserQuery query);
+
+    /**
+     * 新增后台用户并关联角色，密码以 BCrypt 密文入库
+     *
+     * @return 新用户ID
+     */
+    Long createUser(SysUserCreateDTO dto);
 }

@@ -4,14 +4,21 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fruitmall.common.exception.BizException;
 import com.fruitmall.common.result.PageResult;
+import com.fruitmall.common.result.ResultCode;
 import com.fruitmall.common.util.MaskUtil;
+import com.fruitmall.common.util.PasswordUtil;
 import com.fruitmall.system.domain.SysUser;
 import com.fruitmall.system.mapper.SysUserMapper;
+import com.fruitmall.system.mapper.SysUserRoleMapper;
+import com.fruitmall.system.dto.SysUserCreateDTO;
 import com.fruitmall.system.query.SysUserQuery;
 import com.fruitmall.system.service.ISysUserService;
 import com.fruitmall.system.vo.SysUserVO;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
@@ -21,7 +28,10 @@ import java.util.List;
  * 系统用户服务实现。
  */
 @Service
+@RequiredArgsConstructor
 public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements ISysUserService {
+
+    private final SysUserRoleMapper sysUserRoleMapper;
 
     @Override
     public SysUser getByUsername(String username) {
@@ -63,5 +73,30 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         vo.setLastLoginTime(user.getLastLoginTime());
         vo.setCreateTime(user.getCreateTime());
         return vo;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public Long createUser(SysUserCreateDTO dto) {
+        Long exists = baseMapper.selectCount(
+                Wrappers.<SysUser>lambdaQuery().eq(SysUser::getUsername, dto.getUsername()));
+        if (exists != null && exists > 0) {
+            throw new BizException(ResultCode.CONFLICT, "登录名已存在：" + dto.getUsername());
+        }
+
+        SysUser user = new SysUser();
+        user.setUsername(dto.getUsername());
+        // 密码只以 BCrypt 密文入库，任何位置都不保存明文
+        user.setPassword(PasswordUtil.encode(dto.getPassword()));
+        user.setNickname(dto.getNickname());
+        user.setRealName(dto.getRealName());
+        user.setPhone(dto.getPhone());
+        user.setEmail(dto.getEmail());
+        user.setStatus(dto.getStatus());
+        // 审计字段由 MyMetaObjectHandler 自动填充
+        this.save(user);
+
+        dto.getRoleIds().forEach(roleId -> sysUserRoleMapper.insertUserRole(user.getId(), roleId));
+        return user.getId();
     }
 }

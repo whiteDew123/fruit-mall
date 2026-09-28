@@ -1,8 +1,10 @@
 package com.fruitmall.system.admin;
 
 import com.fruitmall.common.annotation.RequiresPermission;
+import com.fruitmall.common.annotation.OperLog;
 import com.fruitmall.common.result.PageResult;
 import com.fruitmall.common.result.Result;
+import com.fruitmall.system.dto.SysUserCreateDTO;
 import com.fruitmall.system.query.SysUserQuery;
 import com.fruitmall.system.service.ISysUserService;
 import com.fruitmall.system.vo.SysUserVO;
@@ -11,6 +13,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -31,5 +35,13 @@ public class SysUserController {
     @GetMapping("/list")
     public Result<PageResult<SysUserVO>> list(@Valid SysUserQuery query) {
         return Result.ok(sysUserService.pageUsers(query));
+    }
+
+    @Operation(summary = "新增用户", description = "新增后台账号并关联角色，密码以 BCrypt 密文入库")
+    @RequiresPermission("system:user:create")
+    @OperLog(module = "系统管理", action = "新增用户")
+    @PostMapping
+    public Result<Long> create(@Valid @RequestBody SysUserCreateDTO dto) {
+        return Result.ok("新增成功", sysUserService.createUser(dto));
     }
 }
