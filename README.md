@@ -130,9 +130,14 @@ MyBatis-Plus 分页插件（每页上限 100）与审计字段自动填充、Kni
 
 ```powershell
 cd fruit-mall\server
-mvn -q -DskipTests compile
-java -cp target\classes com.fruitmall.common.util.PasswordUtil 你的新密码
+mvn -q -DskipTests package
+java -cp target\fruit-mall-server-0.1.0-SNAPSHOT.jar `
+     "-Dloader.main=com.fruitmall.common.util.PasswordUtil" `
+     org.springframework.boot.loader.launch.PropertiesLauncher 你的新密码
 ```
+
+注意：BCrypt 依赖打进了可执行 jar，直接用 `-cp target\classes` 运行会报
+`NoClassDefFoundError: BCryptPasswordEncoder`，所以必须通过上面的方式执行。
 
 ---
 

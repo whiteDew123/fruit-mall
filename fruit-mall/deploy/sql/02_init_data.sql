@@ -153,8 +153,11 @@ WHERE `deleted` = 0
 --
 --     三个账号的明文密码统一为 Fruit@2026（仅演示环境使用，已登记到 README）。
 --     重新生成密文：
---       cd fruit-mall/server && mvn -q -DskipTests compile
---       java -cp target/classes com.fruitmall.common.util.PasswordUtil 新密码
+--       cd fruit-mall/server && mvn -q -DskipTests package
+--       java -cp target/fruit-mall-server-0.1.0-SNAPSHOT.jar \
+--            "-Dloader.main=com.fruitmall.common.util.PasswordUtil" \
+--            org.springframework.boot.loader.launch.PropertiesLauncher 新密码
+--     说明：BCrypt 依赖在可执行 jar 内，用 -cp target/classes 会报 NoClassDefFoundError。
 --
 --     注意：sys_user 的 username 有唯一索引且配合逻辑删除使用，
 --     重复执行本段只更新密码与昵称，不会重复插入账号。
