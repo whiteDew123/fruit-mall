@@ -12,7 +12,7 @@ spring:
   profiles:
     active: local
   jackson:
-    # 时间统一 yyyy-MM-dd HH:mm:ss，时区固定东八区
+    # 时区固定东八区；Java 8 时间类型的具体格式见 JacksonConfig
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
     default-property-inclusion: non_null
@@ -44,6 +44,14 @@ knife4j:
 springdoc:
   api-docs:
     path: /v3/api-docs
+
+fruit-mall:
+  jwt:
+    # 令牌有效期（分钟），密钥在 application-local.yml 中配置，不入仓库
+    expire-minutes: 120
+  auth:
+    # 免登录接口白名单，逗号分隔；后续商品浏览、推荐等公开接口在此追加
+    exclude-paths: /api/auth/admin/login,/api/auth/member/login,/api/auth/member/register
 
 logging:
   level:
