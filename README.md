@@ -115,8 +115,24 @@ MyBatis-Plus 分页插件（每页上限 100）与审计字段自动填充、Kni
 
 ## 五、演示账号
 
-待认证模块落地后，用 `PasswordUtil` 生成 BCrypt 密文写入 `02_init_data.sql`，
-届时在此登记账号与角色：系统管理员、商家运营人员、履约与售后人员、注册会员各一个。
+后台三个账号由 `fruit-mall/deploy/sql/02_init_data.sql` 初始化，明文密码统一为 `Fruit@2026`
+（仅演示环境使用）。密码以 PBKDF2-HMAC-SHA256 密文存储，每个账号使用独立随机盐。
+
+| 账号 | 密码 | 角色 | 权限范围 |
+|---|---|---|---|
+| `admin` | `Fruit@2026` | 系统管理员 | 全部权限 |
+| `operator` | `Fruit@2026` | 商家运营人员 | 商品、库存、订单、会员、经营分析、推荐运营 |
+| `fulfillment` | `Fruit@2026` | 履约与售后人员 | 履约、售后、评价，以及订单查看 |
+
+消费者端会员账号在会员注册功能落地后补充登记。
+
+重新生成密码密文：
+
+```powershell
+cd fruit-mall\server
+mvn -q -DskipTests compile
+java -cp target\classes com.fruitmall.common.util.PasswordUtil 你的新密码
+```
 
 ---
 

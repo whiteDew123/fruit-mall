@@ -147,19 +147,34 @@ WHERE `deleted` = 0
 
 -- -----------------------------------------------------------------------------
 -- 四、演示账号
---     密码必须存 BCrypt 密文，不能写明文、也不能用 MD5。
---     BCrypt 密文由认证模块的 PasswordUtil 生成，因此本脚本在认证模块落地前
---     不写入任何账号，避免出现"来路不明、无法验证"的哈希值。
+--     密码一律存哈希密文，禁止明文、禁止 MD5。
+--     算法：PBKDF2-HMAC-SHA256（JDK 自带），格式 pbkdf2$sha256$迭代次数$盐$哈希，
+--     每个账号使用独立随机盐。选型原因见 PasswordUtil 类注释。
 --
---     认证模块完成后执行下面的步骤补入（三个后台角色各一个演示账号）：
---       1) 用 PasswordUtil.encode("演示密码") 生成 60 位密文
---       2) 插入 sys_user，再用 sys_user_role 关联角色
---       3) 把账号与密码登记到 README.md 的"演示账号"一节
+--     三个账号的明文密码统一为 Fruit@2026（仅演示环境使用，已登记到 README）。
+--     重新生成密文：
+--       cd fruit-mall/server && mvn -q -DskipTests compile
+--       java -cp target/classes com.fruitmall.common.util.PasswordUtil 新密码
 --
---     示例（密文占位，等待替换后再启用）：
---     INSERT INTO `sys_user` (`id`, `username`, `password`, `nickname`, `status`)
---     VALUES (1, 'admin', '$2a$10$待替换', '系统管理员', 10)
---     ON DUPLICATE KEY UPDATE `password` = VALUES(`password`), `nickname` = VALUES(`nickname`);
---
---     INSERT IGNORE INTO `sys_user_role` (`user_id`, `role_id`) VALUES (1, 1);
+--     注意：sys_user 的 username 有唯一索引且配合逻辑删除使用，
+--     重复执行本段只更新密码与昵称，不会重复插入账号。
 -- -----------------------------------------------------------------------------
+INSERT INTO `sys_user` (`id`, `username`, `password`, `nickname`, `real_name`, `phone`, `status`)
+VALUES (1, 'admin',
+        'pbkdf2$sha256$210000$weXoYOaS0/dDyAynpiPMTQ==$aOt4YdRX84yoQEA9Guv9sZ4K7Vai3QHbpdah8ZcpM6o=',
+        '系统管理员', '演示账号', '13800000001', 10),
+       (2, 'operator',
+        'pbkdf2$sha256$210000$IUsPaZkVzLt1K1t+82f+PQ==$Su6Ba7I9sRSH+c0WjX+3K7J8QfOyKjmh7C7UEAhALuA=',
+        '商家运营', '演示账号', '13800000002', 10),
+       (3, 'fulfillment',
+        'pbkdf2$sha256$210000$tiGXDPsaAOcUzB3ojUm56Q==$C5u/PYPJBqwRjSqRqaSmpAne9h7yimdJoTMjdrW0/As=',
+        '履约售后', '演示账号', '13800000003', 10)
+ON DUPLICATE KEY UPDATE `password` = VALUES(`password`),
+                        `nickname` = VALUES(`nickname`),
+                        `real_name` = VALUES(`real_name`),
+                        `phone`    = VALUES(`phone`),
+                        `status`   = VALUES(`status`);
+
+-- 账号与角色关联：admin 超管、operator 运营、fulfillment 履约售后
+INSERT IGNORE INTO `sys_user_role` (`user_id`, `role_id`)
+VALUES (1, 1), (2, 2), (3, 3);
