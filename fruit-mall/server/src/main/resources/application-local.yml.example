@@ -1,0 +1,31 @@
+# 本地开发配置模板
+# 使用方式：复制本文件为同目录下的 application-local.yml 并填入真实密码。
+# application-local.yml 已被 .gitignore 忽略，禁止提交进仓库（AGENTS.md 红线第 10 条）。
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/fruit_mall?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: 请填写本地数据库密码
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-timeout: 30000
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      password:
+      timeout: 3000ms
+
+mybatis-plus:
+  configuration:
+    # 本地开发打印 SQL，便于核对条件更新与分页语句
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    com.fruitmall: debug

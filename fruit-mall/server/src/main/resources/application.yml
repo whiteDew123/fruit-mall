@@ -1,0 +1,51 @@
+# 公共配置：所有环境共用；数据库与 Redis 连接信息在 application-local.yml 中
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+spring:
+  application:
+    name: fruit-mall-server
+  profiles:
+    active: local
+  jackson:
+    # 时间统一 yyyy-MM-dd HH:mm:ss，时区固定东八区
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    default-property-inclusion: non_null
+  mvc:
+    # 关闭默认的静态资源兜底，未匹配的请求交给全局异常处理统一返回 404
+    problemdetails:
+      enabled: false
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.fruitmall.**.domain
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      # 逻辑删除字段：业务代码不写 deleted = 0，由 @TableLogic 接管
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  configuration:
+    map-underscore-to-camel-case: true
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+    enable-footer: false
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    root: info
+    com.fruitmall: info
