@@ -76,7 +76,14 @@ mysql -uroot -p -e "use fruit_mall; show tables;"
 
 ## 四、启动步骤
 
-> 后端与前端骨架搭建中，命令随骨架落地逐条补齐，届时本节即为答辩演示的操作依据。
+> 后端骨架已完成（2026-09-28），两个前端工程尚未开始；本节命令随进度逐条补齐，最终作为答辩演示的操作依据。
+
+首次运行前先复制本地配置模板并填入数据库密码：
+
+```powershell
+Copy-Item fruit-mall\server\src\main\resources\application-local.yml.example `
+          fruit-mall\server\src\main\resources\application-local.yml
+```
 
 ```bash
 # 后端编译（必须通过）
@@ -93,6 +100,16 @@ cd fruit-mall/web-admin && npm install && npm run dev
 ```
 
 端口约定：后端 8080，消费者端 5173，商家后台 5174。
+
+启动后接口文档地址：
+
+| 地址 | 说明 |
+|---|---|
+| `http://localhost:8080/doc.html` | Knife4j 接口文档页 |
+| `http://localhost:8080/v3/api-docs` | OpenAPI 3 规范（JSON） |
+
+后端骨架已完成的能力：统一响应 `{ code, message, data }`（响应码与 HTTP 状态码一致）、全局异常处理、
+MyBatis-Plus 分页插件（每页上限 100）与审计字段自动填充、Knife4j 按 `/api/shop`、`/api/admin`、`/api/auth` 分组。
 
 ---
 
