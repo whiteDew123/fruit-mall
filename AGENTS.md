@@ -62,7 +62,7 @@
 
 ## 2. 红线（做了就是错）
 
-1. **不擅自加依赖。** 允许的依赖只有：`spring-boot-starter-web`、`mybatis-plus-spring-boot3-starter`、`mysql-connector-j`、`spring-boot-starter-data-redis`、`spring-boot-starter-validation`、`spring-boot-starter-aop`、`jjwt`、`lombok`、`knife4j-openapi3-jakarta-spring-boot-starter`。除此之外要加先问。
+1. **不擅自加依赖。** 允许的依赖只有：`spring-boot-starter-web`、`mybatis-plus-spring-boot3-starter`、`mysql-connector-j`、`spring-boot-starter-data-redis`、`spring-boot-starter-validation`、`spring-boot-starter-aop`、`spring-security-crypto`、`jjwt`、`lombok`、`knife4j-openapi3-jakarta-spring-boot-starter`。除此之外要加先问。
 2. **不引入重量级组件。** 禁止 MongoDB、Elasticsearch、RabbitMQ、Kafka、Spring Cloud、工作流引擎、多租户组件。
 3. **不擅自改表结构。** 变更必须先更新 `docs/05-数据库设计.md` 与 `deploy/sql/`，再改代码；禁止自动建表。
 4. **不擅自重构。** 不重命名既有类与方法，不顺手"优化"无关代码，不删除看不懂用途的代码。
@@ -144,4 +144,5 @@ cd fruit-mall/web-admin && npm install && npm run build
 - **命名**：根包名 `com.fruitmall`，业务表前缀 `fm_`，系统权限与日志表前缀 `sys_`。
 - **Redis**：仅用于热点商品缓存与推荐结果缓存，登录态为无状态 JWT 不落 Redis；本机已安装 Redis，按需启动，不可用时降级为直接查库。
 - **数据库**：库名 `fruit_mall`，字符集 `utf8mb4`，本机 MySQL 8.0.46 使用 `root` 账号；密码走本地配置（`application-local.yml`，已被 `.gitignore` 忽略），**禁止写入仓库**。
-- **演示账号**：待认证模块落地后用 `PasswordUtil` 生成 BCrypt 密文，写入 `deploy/sql/02_init_data.sql` 与 `README.md` 登记。
+- **演示账号**：用 `PasswordUtil` 生成 BCrypt 密文，写入 `deploy/sql/02_init_data.sql` 并在 `README.md` 登记。
+- **密码哈希**：BCrypt（`spring-security-crypto`，2026-09-28 经确认加入依赖白名单），成本因子 10；只在 `PasswordUtil` 中调用，业务代码不直接使用加密 API。

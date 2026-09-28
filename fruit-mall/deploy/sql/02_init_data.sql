@@ -148,8 +148,8 @@ WHERE `deleted` = 0
 -- -----------------------------------------------------------------------------
 -- 四、演示账号
 --     密码一律存哈希密文，禁止明文、禁止 MD5。
---     算法：PBKDF2-HMAC-SHA256（JDK 自带），格式 pbkdf2$sha256$迭代次数$盐$哈希，
---     每个账号使用独立随机盐。选型原因见 PasswordUtil 类注释。
+--     算法：BCrypt（spring-security-crypto），成本因子 10，密文自带随机盐，
+--     因此三个账号即使密码相同，密文也各不相同。选型原因见 PasswordUtil 类注释。
 --
 --     三个账号的明文密码统一为 Fruit@2026（仅演示环境使用，已登记到 README）。
 --     重新生成密文：
@@ -161,13 +161,13 @@ WHERE `deleted` = 0
 -- -----------------------------------------------------------------------------
 INSERT INTO `sys_user` (`id`, `username`, `password`, `nickname`, `real_name`, `phone`, `status`)
 VALUES (1, 'admin',
-        'pbkdf2$sha256$210000$weXoYOaS0/dDyAynpiPMTQ==$aOt4YdRX84yoQEA9Guv9sZ4K7Vai3QHbpdah8ZcpM6o=',
+        '$2a$10$wowp2jTbLLKRKgaT5g1UOervW1G4I5SILN4LsJTCl6cMRvIbWHqZq',
         '系统管理员', '演示账号', '13800000001', 10),
        (2, 'operator',
-        'pbkdf2$sha256$210000$IUsPaZkVzLt1K1t+82f+PQ==$Su6Ba7I9sRSH+c0WjX+3K7J8QfOyKjmh7C7UEAhALuA=',
+        '$2a$10$SYaidfHW3XhORrzmAYxjaeDyXS5mMWf1CV8anaUhVCl4JmJgfaL4.',
         '商家运营', '演示账号', '13800000002', 10),
        (3, 'fulfillment',
-        'pbkdf2$sha256$210000$tiGXDPsaAOcUzB3ojUm56Q==$C5u/PYPJBqwRjSqRqaSmpAne9h7yimdJoTMjdrW0/As=',
+        '$2a$10$PBlPRtLSEK5Sy0yRMT/BNOmRyKNzSUVNtVDkrBlVTiEiiNIMnXxnS',
         '履约售后', '演示账号', '13800000003', 10)
 ON DUPLICATE KEY UPDATE `password` = VALUES(`password`),
                         `nickname` = VALUES(`nickname`),
