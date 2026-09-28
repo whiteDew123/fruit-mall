@@ -350,23 +350,6 @@ CREATE TABLE IF NOT EXISTS `fm_product_image` (
     KEY `idx_spu` (`spu_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '商品图片';
 
-CREATE TABLE IF NOT EXISTS `fm_product_feature` (
-    `id`              BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
-    `spu_id`          BIGINT       NOT NULL                COMMENT '商品SPU ID',
-    `feature_version` VARCHAR(20)  DEFAULT NULL            COMMENT '特征版本',
-    `vector_json`     JSON         DEFAULT NULL            COMMENT '定长特征向量',
-    `price_norm`      DECIMAL(8,6) DEFAULT NULL            COMMENT '归一化价格',
-    `season_months`   VARCHAR(20)  DEFAULT NULL            COMMENT '应季月份',
-    `calc_time`       DATETIME     DEFAULT NULL            COMMENT '计算时间',
-    `create_time`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_time`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `create_by`       BIGINT       DEFAULT NULL            COMMENT '创建人ID',
-    `update_by`       BIGINT       DEFAULT NULL            COMMENT '更新人ID',
-    `deleted`         TINYINT      NOT NULL DEFAULT 0      COMMENT '逻辑删除：0未删除 1已删除',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_spu` (`spu_id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '商品特征向量';
-
 -- =============================================================================
 -- 四、库存（2 张）
 -- =============================================================================
