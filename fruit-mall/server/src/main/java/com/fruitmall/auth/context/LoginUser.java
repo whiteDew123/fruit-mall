@@ -33,4 +33,14 @@ public class LoginUser {
     public boolean hasPermission(String permission) {
         return permissions != null && permissions.contains(permission);
     }
+
+    /** 是否为后台用户 */
+    public boolean isAdmin() {
+        return UserTypeEnum.ADMIN == userType;
+    }
+
+    /** 是否为会员（消费者端） */
+    public boolean isMember() {
+        return UserTypeEnum.MEMBER == userType;
+    }
 }

@@ -1,5 +1,6 @@
 package com.fruitmall.auth.context;
 
+import com.fruitmall.common.enums.UserTypeEnum;
 import com.fruitmall.common.exception.BizException;
 import com.fruitmall.common.result.ResultCode;
 
@@ -36,6 +37,19 @@ public final class UserContext {
     public static Long getUserId() {
         LoginUser loginUser = HOLDER.get();
         return loginUser == null ? null : loginUser.getUserId();
+    }
+
+    /**
+     * 获取当前登录会员ID。
+     * 未登录抛 401；后台账号调用消费者端接口抛 403，
+     * 这是数据归属校验的第一道闸门，防止越权访问他人购物车与订单。
+     */
+    public static Long getRequiredMemberId() {
+        LoginUser loginUser = getRequired();
+        if (UserTypeEnum.MEMBER != loginUser.getUserType()) {
+            throw new BizException(ResultCode.FORBIDDEN, "该接口仅限会员使用");
+        }
+        return loginUser.getUserId();
     }
 
     public static void clear() {

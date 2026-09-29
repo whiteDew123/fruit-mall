@@ -5,6 +5,8 @@ import com.fruitmall.auth.service.IAuthService;
 import com.fruitmall.auth.vo.LoginUserVO;
 import com.fruitmall.auth.vo.LoginVO;
 import com.fruitmall.common.result.Result;
+import com.fruitmall.member.dto.MemberLoginDTO;
+import com.fruitmall.member.dto.MemberRegisterDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -37,5 +39,17 @@ public class AuthController {
     @GetMapping("/profile")
     public Result<LoginUserVO> profile() {
         return Result.ok(authService.currentUser());
+    }
+
+    @Operation(summary = "会员注册", description = "消费者端账号注册，密码以 BCrypt 密文存储")
+    @PostMapping("/member/register")
+    public Result<Long> memberRegister(@Valid @RequestBody MemberRegisterDTO dto) {
+        return Result.ok("注册成功", authService.memberRegister(dto));
+    }
+
+    @Operation(summary = "会员登录", description = "消费者端登录，返回会员令牌")
+    @PostMapping("/member/login")
+    public Result<LoginVO> memberLogin(@Valid @RequestBody MemberLoginDTO dto) {
+        return Result.ok("登录成功", authService.memberLogin(dto));
     }
 }

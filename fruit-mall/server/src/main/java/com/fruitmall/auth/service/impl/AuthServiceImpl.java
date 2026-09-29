@@ -7,12 +7,17 @@ import com.fruitmall.auth.service.IAuthService;
 import com.fruitmall.auth.vo.LoginUserVO;
 import com.fruitmall.auth.vo.LoginVO;
 import com.fruitmall.common.constant.AuthConstant;
+import com.fruitmall.common.enums.MemberStatusEnum;
 import com.fruitmall.common.enums.SysUserStatusEnum;
 import com.fruitmall.common.enums.UserTypeEnum;
 import com.fruitmall.common.exception.BizException;
 import com.fruitmall.common.result.ResultCode;
 import com.fruitmall.common.util.JwtUtil;
 import com.fruitmall.common.util.PasswordUtil;
+import com.fruitmall.member.domain.FmMember;
+import com.fruitmall.member.dto.MemberLoginDTO;
+import com.fruitmall.member.dto.MemberRegisterDTO;
+import com.fruitmall.member.service.IFmMemberService;
 import com.fruitmall.system.domain.SysUser;
 import com.fruitmall.system.service.ISysMenuService;
 import com.fruitmall.system.service.ISysRoleService;
@@ -36,6 +41,7 @@ public class AuthServiceImpl implements IAuthService {
     private final ISysUserService sysUserService;
     private final ISysRoleService sysRoleService;
     private final ISysMenuService sysMenuService;
+    private final IFmMemberService fmMemberService;
     private final JwtUtil jwtUtil;
 
     @Override
@@ -84,6 +90,43 @@ public class AuthServiceImpl implements IAuthService {
                 .avatar(user.getAvatar())
                 .roleCodes(roleCodes)
                 .permissions(permissions)
+                .build();
+    }
+
+    @Override
+    public Long memberRegister(MemberRegisterDTO dto) {
+        return fmMemberService.register(dto);
+    }
+
+    @Override
+    public LoginVO memberLogin(MemberLoginDTO dto) {
+        FmMember member = fmMemberService.getByUsername(dto.getUsername());
+        // 用户不存在与密码错误返回同一提示，避免暴露账号是否存在
+        if (member == null || !PasswordUtil.matches(dto.getPassword(), member.getPassword())) {
+            log.warn("会员登录失败，用户名或密码错误：{}", dto.getUsername());
+            throw new BizException(ResultCode.BAD_REQUEST, "用户名或密码错误");
+        }
+        if (!MemberStatusEnum.NORMAL.getCode().equals(member.getStatus())) {
+            log.warn("会员登录失败，账号已禁用：{}", dto.getUsername());
+            throw new BizException(ResultCode.FORBIDDEN, "账号已被禁用，请联系客服");
+        }
+        fmMemberService.updateLastLoginTime(member.getId());
+
+        // 会员端不做功能级权限，数据归属由各业务 Service 各自校验
+        String token = jwtUtil.generate(member.getId(), member.getUsername(), UserTypeEnum.MEMBER);
+        log.info("会员登录成功：memberId={}, username={}", member.getId(), member.getUsername());
+        return LoginVO.builder()
+                .token(token)
+                .tokenType(AuthConstant.TOKEN_PREFIX.trim())
+                .expiresIn(jwtUtil.getExpireSeconds())
+                .user(LoginUserVO.builder()
+                        .userId(member.getId())
+                        .username(member.getUsername())
+                        .nickname(member.getNickname())
+                        .avatar(member.getAvatar())
+                        .roleCodes(List.of())
+                        .permissions(Set.of())
+                        .build())
                 .build();
     }
 }
