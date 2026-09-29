@@ -11,6 +11,11 @@ spring:
     name: fruit-mall-server
   profiles:
     active: local
+  servlet:
+    multipart:
+      # 图片上传大小限制
+      max-file-size: 5MB
+      max-request-size: 20MB
   jackson:
     # 时区固定东八区；Java 8 时间类型的具体格式见 JacksonConfig
     date-format: yyyy-MM-dd HH:mm:ss
@@ -51,7 +56,18 @@ fruit-mall:
     expire-minutes: 120
   auth:
     # 免登录接口白名单，逗号分隔；后续商品浏览、推荐等公开接口在此追加
-    exclude-paths: /api/auth/admin/login,/api/auth/member/login,/api/auth/member/register
+    exclude-paths: >-
+      /api/auth/admin/login,
+      /api/auth/member/login,
+      /api/auth/member/register,
+      /api/shop/category/**,
+      /api/shop/product/**,
+      /api/shop/behavior/report,
+      /api/files/**
+  file:
+    # 图片上传目录与访问前缀
+    upload-dir: ./upload
+    access-prefix: /api/files
 
 logging:
   level:
