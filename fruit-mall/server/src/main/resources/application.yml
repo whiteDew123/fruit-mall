@@ -68,6 +68,11 @@ fruit-mall:
     # 图片上传目录与访问前缀
     upload-dir: ./upload
     access-prefix: /api/files
+  order:
+    # 待支付订单的支付时限（分钟）与超时关单扫描间隔（毫秒）
+    expire-minutes: 30
+    timeout-scan-interval: 60000
+    timeout-scan-initial-delay: 30000
 
 logging:
   level:

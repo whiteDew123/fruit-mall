@@ -10,6 +10,8 @@ import com.fruitmall.order.vo.OrderListVO;
 import com.fruitmall.order.vo.OrderPreviewVO;
 import com.fruitmall.order.vo.OrderSubmitVO;
 
+import java.util.List;
+
 /** 订单服务。 */
 public interface IFmOrdersService extends IService<FmOrders> {
 
@@ -42,4 +44,10 @@ public interface IFmOrdersService extends IService<FmOrders> {
 
     /** 后台取消订单：仅待支付可取消 */
     void cancelByAdmin(Long orderId, String reason);
+
+    /** 查询已超时未支付的订单，供定时任务扫描 */
+    List<FmOrders> listExpiredOrders(int limit);
+
+    /** 关闭单笔超时订单（定时任务调用），非待支付状态直接跳过 */
+    void closeExpiredOrder(Long orderId);
 }

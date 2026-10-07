@@ -34,6 +34,7 @@ import com.fruitmall.order.mapper.FmOrderStatusLogMapper;
 import com.fruitmall.order.mapper.FmOrdersMapper;
 import com.fruitmall.order.query.OrderQuery;
 import com.fruitmall.order.service.IFmOrdersService;
+import com.fruitmall.order.service.IOrderCancelService;
 import com.fruitmall.order.state.OrderStateMachine;
 import com.fruitmall.order.vo.OrderDetailVO;
 import com.fruitmall.order.vo.OrderItemVO;
@@ -81,6 +82,7 @@ public class FmOrdersServiceImpl extends ServiceImpl<FmOrdersMapper, FmOrders> i
     private final IFmMemberAddressService fmMemberAddressService;
     private final IInventoryTransactionService inventoryTransactionService;
     private final OrderStateMachine orderStateMachine;
+    private final IOrderCancelService orderCancelService;
     private final IBehaviorService behaviorService;
 
     /** 支付截止时长（分钟），超时后由定时任务关单 */
@@ -259,7 +261,9 @@ public class FmOrdersServiceImpl extends ServiceImpl<FmOrdersMapper, FmOrders> i
     public void cancelByMember(Long orderId, String reason) {
         FmOrders order = requireMine(orderId);
         LoginUser loginUser = UserContext.getRequired();
-        cancel(order, reason, OperatorTypeEnum.MEMBER, loginUser.getUserId(), loginUser.getUsername());
+        orderCancelService.close(order, OrderActionEnum.CANCEL, OperatorTypeEnum.MEMBER,
+                loginUser.getUserId(), loginUser.getUsername(),
+                StringUtils.hasText(reason) ? reason : "用户取消");
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -267,7 +271,9 @@ public class FmOrdersServiceImpl extends ServiceImpl<FmOrdersMapper, FmOrders> i
     public void cancelByAdmin(Long orderId, String reason) {
         FmOrders order = requireOrder(orderId);
         LoginUser loginUser = UserContext.getRequired();
-        cancel(order, reason, OperatorTypeEnum.MERCHANT, loginUser.getUserId(), loginUser.getUsername());
+        orderCancelService.close(order, OrderActionEnum.CANCEL, OperatorTypeEnum.MERCHANT,
+                loginUser.getUserId(), loginUser.getUsername(),
+                StringUtils.hasText(reason) ? reason : "商家取消");
     }
 
     @Override
@@ -279,43 +285,26 @@ public class FmOrdersServiceImpl extends ServiceImpl<FmOrdersMapper, FmOrders> i
         this.updateById(update);
     }
 
-    /**
-     * 取消订单：仅待支付状态可取消，先释放预占库存再走状态机。
-     */
-    private void cancel(FmOrders order, String reason, OperatorTypeEnum operatorType,
-                        Long operatorId, String operatorName) {
-        if (!OrderStatusEnum.PENDING_PAY.getCode().equals(order.getStatus())) {
-            throw new BizException(ResultCode.CONFLICT, "只有待支付订单可以取消，已支付订单请走售后流程");
-        }
-        releaseStock(order, operatorId, operatorName);
-
-        FmOrders update = new FmOrders();
-        update.setId(order.getId());
-        update.setCancelTime(LocalDateTime.now());
-        update.setCancelReason(StringUtils.hasText(reason) ? reason : "用户取消");
-        orderStateMachine.transition(update, OrderStatusEnum.CANCELLED, OrderActionEnum.CANCEL,
-                operatorType, operatorId, operatorName, reason);
+    @Override
+    public List<FmOrders> listExpiredOrders(int limit) {
+        return this.list(Wrappers.<FmOrders>lambdaQuery()
+                .eq(FmOrders::getStatus, OrderStatusEnum.PENDING_PAY.getCode())
+                .lt(FmOrders::getExpireTime, LocalDateTime.now())
+                .orderByAsc(FmOrders::getId)
+                .last("LIMIT " + limit));
     }
 
-    /**
-     * 释放订单占用的库存并写流水。
-     * 释放失败（预占数量不足）说明数据已经不一致，这里记错误日志并继续，
-     * 避免订单永久卡在待支付；不一致由定期的一致性校验脚本兜住。
-     */
-    private void releaseStock(FmOrders order, Long operatorId, String operatorName) {
-        for (FmOrderItem item : listItems(order.getId())) {
-            FmProductSku sku = skuMapper.selectById(item.getSkuId());
-            int beforeStock = sku == null ? 0 : (sku.getStock() == null ? 0 : sku.getStock());
-            int affected = skuMapper.releaseStock(item.getSkuId(), item.getQuantity());
-            if (affected == 0) {
-                log.error("释放预占库存失败，可能已存在数据不一致：orderNo={}, skuId={}, quantity={}",
-                        order.getOrderNo(), item.getSkuId(), item.getQuantity());
-                continue;
-            }
-            inventoryTransactionService.record(item.getSkuId(), InventoryTxnTypeEnum.RELEASE,
-                    item.getQuantity(), beforeStock, beforeStock + item.getQuantity(),
-                    InventoryBizTypeEnum.ORDER, order.getOrderNo(), operatorId, operatorName, "取消订单释放库存");
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void closeExpiredOrder(Long orderId) {
+        FmOrders order = requireOrder(orderId);
+        // 幂等保护：订单在这期间已被支付或取消时直接跳过
+        if (!OrderStatusEnum.PENDING_PAY.getCode().equals(order.getStatus())) {
+            log.info("订单状态已变化，跳过超时关单：orderNo={}, status={}", order.getOrderNo(), order.getStatus());
+            return;
         }
+        orderCancelService.close(order, OrderActionEnum.TIMEOUT, OperatorTypeEnum.SYSTEM,
+                null, "系统", "超时未支付，系统自动关单");
     }
 
     private PageResult<OrderListVO> pageOrders(OrderQuery query, Long memberId) {
