@@ -14,6 +14,7 @@ import com.fruitmall.common.enums.PayStatusEnum;
 import com.fruitmall.common.exception.BizException;
 import com.fruitmall.common.result.ResultCode;
 import com.fruitmall.common.util.BizNoUtil;
+import com.fruitmall.fulfillment.service.IFmFulfillmentOrderService;
 import com.fruitmall.inventory.service.IInventoryTransactionService;
 import com.fruitmall.order.domain.FmOrderItem;
 import com.fruitmall.order.domain.FmOrders;
@@ -64,6 +65,7 @@ public class FmPaymentRecordServiceImpl extends ServiceImpl<FmPaymentRecordMappe
     private final PaymentStateMachine paymentStateMachine;
     private final OrderStateMachine orderStateMachine;
     private final IOrderCancelService orderCancelService;
+    private final IFmFulfillmentOrderService fmFulfillmentOrderService;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -168,6 +170,9 @@ public class FmPaymentRecordServiceImpl extends ServiceImpl<FmPaymentRecordMappe
                     stock, stock, InventoryBizTypeEnum.ORDER, order.getOrderNo(),
                     memberId, username, "支付成功，核销预占（可售库存不变，预占库存减少）");
         }
+
+        // 支付成功后生成履约单，进入待分拣（幂等）
+        fmFulfillmentOrderService.createForOrder(order);
 
         log.info("支付成功：orderNo={}, payNo={}, amount={}",
                 order.getOrderNo(), record.getPayNo(), order.getPayAmount());
