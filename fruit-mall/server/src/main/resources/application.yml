@@ -63,6 +63,7 @@ fruit-mall:
       /api/shop/category/**,
       /api/shop/product/**,
       /api/shop/behavior/report,
+      /api/shop/review/spu/**,
       /api/files/**
   file:
     # 图片上传目录与访问前缀
