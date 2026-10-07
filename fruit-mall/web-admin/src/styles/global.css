@@ -1,0 +1,46 @@
+:root {
+  --fm-primary: #07c160;
+  --fm-sidebar-bg: #1f2d3d;
+  --fm-content-bg: #f0f2f5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+  background: var(--fm-content-bg);
+}
+
+.page-card {
+  background: #fff;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.pager {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.price {
+  color: #ee0a24;
+  font-weight: 600;
+}
