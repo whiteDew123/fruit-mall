@@ -27,4 +27,7 @@ public interface IFmMemberAddressService extends IService<FmMemberAddress> {
 
     /** 当前会员的默认地址，无默认地址时返回第一条；一条都没有则返回 null */
     MemberAddressVO getDefaultAddress(Long memberId);
+
+    /** 按ID取当前登录会员的地址，非本人地址抛 404 */
+    MemberAddressVO getMine(Long id);
 }

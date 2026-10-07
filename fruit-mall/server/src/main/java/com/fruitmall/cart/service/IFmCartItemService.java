@@ -37,4 +37,7 @@ public interface IFmCartItemService extends IService<FmCartItem> {
 
     /** 当前会员选中的有效项，供下单流程使用 */
     List<CartItemVO> listSelectedForOrder(Long memberId);
+
+    /** 下单成功后移除已购买的商品项（物理删除） */
+    void removeOrderedItems(List<Long> cartItemIds, Long memberId);
 }

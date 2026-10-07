@@ -158,6 +158,16 @@ public class FmCartItemServiceImpl extends ServiceImpl<FmCartItemMapper, FmCartI
                 .toList();
     }
 
+    @Override
+    public void removeOrderedItems(List<Long> cartItemIds, Long memberId) {
+        if (cartItemIds == null || cartItemIds.isEmpty()) {
+            return;
+        }
+        for (Long cartItemId : cartItemIds) {
+            baseMapper.deleteByIdAndMember(cartItemId, memberId);
+        }
+    }
+
     /** 校验购物车项属于当前登录会员，防止越权操作他人购物车 */
     private FmCartItem requireMine(Long cartItemId) {
         Long memberId = UserContext.getRequiredMemberId();

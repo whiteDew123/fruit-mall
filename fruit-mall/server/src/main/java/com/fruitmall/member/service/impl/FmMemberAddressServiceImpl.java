@@ -108,6 +108,11 @@ public class FmMemberAddressServiceImpl extends ServiceImpl<FmMemberAddressMappe
         return address == null ? null : toVO(address);
     }
 
+    @Override
+    public MemberAddressVO getMine(Long id) {
+        return toVO(requireMine(id));
+    }
+
     /** 校验地址存在且属于当前登录会员，防止越权操作他人地址 */
     private FmMemberAddress requireMine(Long id) {
         Long memberId = UserContext.getRequiredMemberId();
