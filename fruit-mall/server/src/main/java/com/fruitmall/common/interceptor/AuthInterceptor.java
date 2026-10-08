@@ -15,9 +15,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -37,9 +39,19 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AuthInterceptor implements HandlerInterceptor {
 
+    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
+
     private final JwtUtil jwtUtil;
     private final ISysRoleService sysRoleService;
     private final ISysMenuService sysMenuService;
+
+    /**
+     * 可选登录的路径：公开接口，但带令牌时仍要识别用户身份。
+     * 例如首页推荐对游客可用、对登录会员要做个性化；行为埋点对游客可用、登录后要记录会员ID。
+     * 这类路径一旦放进"完全跳过"的白名单，UserContext 就永远为空，个性化与埋点归属都会失效。
+     */
+    @Value("${fruit-mall.auth.optional-paths:}")
+    private String optionalPaths;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -51,12 +63,25 @@ public class AuthInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        boolean optionalAuth = isOptionalPath(request.getRequestURI());
         String token = resolveToken(request);
         if (!StringUtils.hasText(token)) {
+            if (optionalAuth) {
+                return true;
+            }
             throw new BizException(ResultCode.UNAUTHORIZED);
         }
 
-        Claims claims = jwtUtil.parse(token);
+        Claims claims;
+        try {
+            claims = jwtUtil.parse(token);
+        } catch (BizException e) {
+            // 公开接口带了失效令牌时按游客处理，不能因为令牌过期就打不开首页
+            if (optionalAuth) {
+                return true;
+            }
+            throw e;
+        }
         Long userId = parseUserId(claims);
         String username = claims.get(AuthConstant.CLAIM_USERNAME, String.class);
         Integer userTypeCode = claims.get(AuthConstant.CLAIM_USER_TYPE, Integer.class);
@@ -79,6 +104,20 @@ public class AuthInterceptor implements HandlerInterceptor {
             throw new BizException(ResultCode.FORBIDDEN, "无权限：" + requiresPermission.value());
         }
         return true;
+    }
+
+    /** 判断当前请求是否为"可选登录"路径 */
+    private boolean isOptionalPath(String uri) {
+        if (!StringUtils.hasText(optionalPaths) || uri == null) {
+            return false;
+        }
+        for (String pattern : optionalPaths.split(",")) {
+            String trimmed = pattern.trim();
+            if (StringUtils.hasText(trimmed) && PATH_MATCHER.match(trimmed, uri)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
