@@ -55,16 +55,21 @@ fruit-mall:
     # 令牌有效期（分钟），密钥在 application-local.yml 中配置，不入仓库
     expire-minutes: 120
   auth:
-    # 免登录接口白名单，逗号分隔；后续商品浏览、推荐等公开接口在此追加
+    # 完全跳过鉴权的路径：连令牌都不解析，UserContext 一定为空
     exclude-paths: >-
       /api/auth/admin/login,
       /api/auth/member/login,
       /api/auth/member/register,
+      /api/files/**
+    # 可选登录路径：公开可访问，但带令牌时会识别用户身份。
+    # 首页推荐需要它做个性化，行为埋点需要它记录会员归属，
+    # 这类接口不能放进上面的白名单，否则 UserContext 永远为空。
+    optional-paths: >-
       /api/shop/category/**,
       /api/shop/product/**,
-      /api/shop/behavior/report,
+      /api/shop/recommend/**,
       /api/shop/review/spu/**,
-      /api/files/**
+      /api/shop/behavior/report
   file:
     # 图片上传目录与访问前缀
     upload-dir: ./upload
@@ -74,6 +79,22 @@ fruit-mall:
     expire-minutes: 30
     timeout-scan-interval: 60000
     timeout-scan-initial-delay: 30000
+  recommend:
+    # 权重方案版本号会写入推荐留痕，便于对比不同权重方案的效果
+    version: v2026-10-08
+    # 行为时间衰减半衰期（天）与画像回溯窗口（天）
+    half-life-days: 14
+    behavior-window-days: 30
+    # 热度统计窗口（天）与召回候选上限
+    hot-days: 7
+    recall-limit: 100
+    # 多因素权重：内容偏好、时令、热度、价格、品质
+    weights:
+      CONTENT: 0.35
+      SEASON: 0.20
+      HOT: 0.20
+      PRICE: 0.15
+      QUALITY: 0.10
 
 logging:
   level:

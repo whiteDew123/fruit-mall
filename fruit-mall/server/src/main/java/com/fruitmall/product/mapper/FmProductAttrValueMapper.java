@@ -2,6 +2,7 @@ package com.fruitmall.product.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.fruitmall.product.domain.FmProductAttrValue;
+import com.fruitmall.product.vo.AttrValueRowVO;
 import com.fruitmall.product.vo.ProductAttrVO;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
@@ -34,4 +35,16 @@ public interface FmProductAttrValueMapper extends BaseMapper<FmProductAttrValue>
              ORDER BY d.sort, d.id
             """)
     List<ProductAttrVO> selectAttrsBySpuId(@Param("spuId") Long spuId);
+
+    /** 查询全部商品的数值型特色属性取值，供推荐模块一次构建全量特征向量 */
+    @Select("""
+            SELECT v.spu_id AS spu_id, d.attr_code AS attr_code, v.num_value AS num_value
+              FROM fm_product_attr_value v
+              JOIN fm_product_attr_def d ON d.id = v.attr_def_id AND d.deleted = 0
+             WHERE v.deleted = 0
+               AND d.data_type = 10
+               AND d.status = 10
+               AND v.num_value IS NOT NULL
+            """)
+    List<AttrValueRowVO> selectNumericAttrValues();
 }

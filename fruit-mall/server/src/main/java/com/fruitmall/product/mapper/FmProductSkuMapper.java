@@ -2,9 +2,13 @@ package com.fruitmall.product.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.fruitmall.product.domain.FmProductSku;
+import com.fruitmall.product.vo.SkuSummaryVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+
+import java.util.List;
 
 /**
  * 商品 SKU Mapper。
@@ -55,4 +59,15 @@ public interface FmProductSkuMapper extends BaseMapper<FmProductSku> {
                AND locked_stock >= #{quantity}
             """)
     int releaseStock(@Param("skuId") Long skuId, @Param("quantity") Integer quantity);
+
+    /** 按商品聚合最低售价与可售库存，供推荐模块构建特征使用；只统计启用状态的规格 */
+    @Select("""
+            SELECT spu_id AS spu_id,
+                   MIN(price) AS min_price,
+                   IFNULL(SUM(stock - locked_stock), 0) AS available_stock
+              FROM fm_product_sku
+             WHERE deleted = 0 AND status = 10
+             GROUP BY spu_id
+            """)
+    List<SkuSummaryVO> selectSkuSummary();
 }
